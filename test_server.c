@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include "config.h"
 #include "lib/tcpsock.h"
+#include "pthread.h"
 
 /**
  * Implements a sequential test server (only one connection at the same time)
@@ -29,9 +30,9 @@ int main(int argc, char *argv[]) {
     printf("Test server is started\n");
     if (tcp_passive_open(&server, PORT) != TCP_NO_ERROR) exit(EXIT_FAILURE);
     do {
-        if (tcp_wait_for_connection(server, &client) != TCP_NO_ERROR) exit(EXIT_FAILURE);
-        printf("Incoming client connection\n");
-        conn_counter++;
+        if (tcp_wait_for_connection(server, &client) != TCP_NO_ERROR) exit(EXIT_FAILURE); //check
+        printf("Incoming client connection\n"); //check
+        conn_counter++; //check
         do {
             // read sensor ID
             bytes = sizeof(data.id);
@@ -46,16 +47,16 @@ int main(int argc, char *argv[]) {
                 printf("sensor id = %" PRIu16 " - temperature = %g - timestamp = %ld\n", data.id, data.value,
                        (long int) data.ts);
             }
-        } while (result == TCP_NO_ERROR);
+        } while (result == TCP_NO_ERROR);//check
         if (result == TCP_CONNECTION_CLOSED)
-            printf("Peer has closed connection\n");
+            printf("Peer has closed connection\n");//check
         else
-            printf("Error occured on connection to peer\n");
-        tcp_close(&client);
-    } while (conn_counter < MAX_CONN);
-    if (tcp_close(&server) != TCP_NO_ERROR) exit(EXIT_FAILURE);
-    printf("Test server is shutting down\n");
-    return 0;
+            printf("Error occured on connection to peer\n");//check
+        tcp_close(&client); //check
+    } while (conn_counter < MAX_CONN); //check
+    if (tcp_close(&server) != TCP_NO_ERROR) exit(EXIT_FAILURE); //check
+    printf("Test server is shutting down\n"); //check
+    return 0; //check
 }
 
 
