@@ -12,7 +12,7 @@
 /**
  * Implements a sequential test server (only one connection at the same time)
  */
-
+/*
 int main(int argc, char *argv[]) {
     tcpsock_t *server, *client;
     sensor_data_t data;
@@ -59,6 +59,6 @@ int main(int argc, char *argv[]) {
     return 0; //check
 }
 
-
+*/
 
 

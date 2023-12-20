@@ -5,45 +5,52 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include "config.h"
 #include "lib/tcpsock.h"
 #include "pthread.h"
+#include "config.h"
 
-/**
- * Implements a sequential test server (only one connection at the same time)
- */
+struct ThreadArgs {
+    pthread_mutex_t *mutex;
+    tcpsock_t *client;
+};
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void *handleConnection(void *argument){
-    tcpsock_t *client = (tcpsock_t *)argument;
+void *handleConnection(void *argument) {
+    struct ThreadArgs *args = (struct ThreadArgs *)argument;
+    tcpsock_t *client = args->client;
     int bytes, result;
     sensor_data_t data;
-    printf("Incoming client connection\n");
+
+    pthread_mutex_lock(args->mutex);
+
     do {
-        // read sensor ID
         bytes = sizeof(data.id);
-        result = tcp_receive(client, (void *) &data.id, &bytes);
-        // read temperature
+        result = tcp_receive(client, (void *)&data.id, &bytes);
+
         bytes = sizeof(data.value);
-        result = tcp_receive(client, (void *) &data.value, &bytes);
-        // read timestamp
+        result = tcp_receive(client, (void *)&data.value, &bytes);
+
         bytes = sizeof(data.ts);
-        result = tcp_receive(client, (void *) &data.ts, &bytes);
+        result = tcp_receive(client, (void *)&data.ts, &bytes);
+
         if ((result == TCP_NO_ERROR) && bytes) {
             printf("sensor id = %" PRIu16 " - temperature = %g - timestamp = %ld\n", data.id, data.value,
-                   (long int) data.ts);
+                    (long int)data.ts);
         }
     } while (result == TCP_NO_ERROR);
+
     if (result == TCP_CONNECTION_CLOSED)
         printf("Peer has closed connection\n");
     else
         printf("Error occurred on connection to peer\n");
+
     tcp_close(&client);
+    pthread_mutex_unlock(args->mutex);
+
     return NULL;
-
-
 }
 
-int serverStartup(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
     tcpsock_t *server, *client;
     sensor_data_t data;
     int bytes, result;
@@ -52,35 +59,35 @@ int serverStartup(int argc, char *argv[]){
     int MAX_CONN = atoi(argv[2]);
     int PORT = atoi(argv[1]);
 
-    if(argc < 3) {
+    if (argc < 3) {
         printf("Please provide the right arguments: first the port, then the max nb of clients");
         return -1;
     }
-    //server wordt opgestart en is klaar om te luisteren
-    printf("Test server is started\n");
-    if (tcp_passive_open(&server, PORT) != TCP_NO_ERROR) exit(EXIT_FAILURE);
-
-    while(conn_counter < MAX_CONN)
+    printf("Server is started\n");
+    if (tcp_passive_open(&server, PORT) != TCP_NO_ERROR)
+        exit(EXIT_FAILURE);
+    while (conn_counter < MAX_CONN)
     {
         if (tcp_wait_for_connection(server, &client) != TCP_NO_ERROR) exit(EXIT_FAILURE);
         printf("Incoming client connection\n");
-        conn_counter++; //increment counter tot max connecties bereikt wordt
-        //nieuwe thread maken voor elke nieuwe connectie
+        conn_counter++;
         pthread_t thread_id;
-        result = pthread_create(&thread_id, NULL, handleConnection((void *)client), NULL); //waarom 4 args als client arg ook in de startroutine kan meegegeven worden?
-        //checke of res ok is
-        if(result != 0)
-        {
-            fprintf(stderr, "error while making stream!");
+        struct ThreadArgs args;
+        args.mutex = &mutex;
+        args.client = client;
+        result = pthread_create(&thread_id, NULL, handleConnection, (void *)&args);
+        if (result != 0) {
+            fprintf(stderr, "Error while making stream!");
             exit(EXIT_FAILURE);
         }
-        //detach thread om resources vrij te maken nadat thread gestopt wordt
         pthread_detach(thread_id);
+
     }
-    if (tcp_close(&server) != TCP_NO_ERROR) exit(EXIT_FAILURE);
+
+    if (tcp_close(&server) != TCP_NO_ERROR)
+        exit(EXIT_FAILURE);
 
     printf("Test server is shutting down\n");
+    pthread_mutex_destroy(&mutex);
     return 0;
-
-
 }
