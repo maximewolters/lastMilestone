@@ -21,7 +21,10 @@ runclient1: sensor_node
 	./sensor_node 1 2 127.0.0.1 5678
 
 runclient2: sensor_node
-	./sensor_node 2 5 127.0.0.1 5678
+	./sensor_node 2 2 127.0.0.1 5678
+
+runclient3: sensor_node
+	./sensor_node 3 2 127.0.0.1 5678
 
 zip:
 	zip lastMilestone.zip *.c *.h
