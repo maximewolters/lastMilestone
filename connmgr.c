@@ -14,6 +14,9 @@ int i = 0;
 int conn_counter = 0;
 int disconnected_clients = 0;
 sbuffer_t *shared_buffer;
+int connmgr_finished = 0;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
 
 void *handleConnection(void *arg) {
     tcpsock_t *client = *((tcpsock_t **)arg);

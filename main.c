@@ -9,25 +9,37 @@ FILE *output_file;
 int port;
 int max_conn;
 void *start_connection_manager(void *arg);
+pthread_cond_t readers_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t readers_mutex = PTHREAD_MUTEX_INITIALIZER;
+int exit_readers = 0;
 
-void *reader_thread(void *arg) { //func for the reader thread
+
+void *storage_manager(void *arg) { //func for the reader thread
     sbuffer_t *buffer = (sbuffer_t *)arg;
     sensor_data_t data;
+
     while (1) {
-        if (sbuffer_remove(buffer, &data) == SBUFFER_SUCCESS) { //
-            if (data.id == 0 && data.value == 0 && data.ts == 0) {
-                break;
-            }
-            fprintf(output_file, "%d,%lf,%lu\n", data.id, data.value, data.ts);
-            usleep(25000); //tjis is in microsec
+        pthread_mutex_lock(&readers_mutex);
+        while (!exit_readers && sbuffer_remove(buffer, &data) != SBUFFER_SUCCESS) {
+            pthread_cond_wait(&readers_cond, &readers_mutex);
         }
+        pthread_mutex_unlock(&readers_mutex);
+        if (exit_readers) {
+            break;
+        }
+        if (data.id == 0 && data.value == 0 && data.ts == 0) {
+            break;
+        }
+        fprintf(output_file, "%d,%lf,%lu\n", data.id, data.value, data.ts);
+        usleep(25000);
     }
+
     return NULL;
 }
 
 
 int main(int argc, char* argv[]) {
-    pthread_t reader1, reader2, connection_manager;
+    pthread_t reader1, connection_manager;
     port = atoi(argv[1]);
     max_conn = atoi(argv[2]);
     //check if the right arguments are filled in
@@ -50,14 +62,17 @@ int main(int argc, char* argv[]) {
 
     // Create threads for readers and writer
     pthread_create(&connection_manager, NULL, start_connection_manager, NULL);
-    pthread_create(&reader1, NULL, reader_thread, shared_buffer);
-    pthread_create(&reader2, NULL, reader_thread, shared_buffer);
+    pthread_create(&reader1, NULL, storage_manager, shared_buffer);
 
+    // Set the exit_readers flag
+    pthread_mutex_lock(&readers_mutex);
+    exit_readers = 1;
+    pthread_cond_signal(&readers_cond);
+    pthread_mutex_unlock(&readers_mutex);
 
     // Wait for all threads to finish
     pthread_join(connection_manager, NULL);
     pthread_join(reader1, NULL);
-    pthread_join(reader2, NULL);
 
     fclose(output_file);
     sbuffer_free(&shared_buffer);
@@ -66,11 +81,18 @@ int main(int argc, char* argv[]) {
 }
 
 
-void *start_connection_manager(void *arg){
+void *start_connection_manager(void *arg) {
     // Start the server and connection manager
     connmgrMain(port, max_conn, shared_buffer);
-    pthread_exit(NULL);
+
+    pthread_mutex_lock(&readers_mutex);
+    exit_readers = 1;
+    pthread_cond_signal(&readers_cond);
+    pthread_mutex_unlock(&readers_mutex);
+
+    return NULL; // No pthread_exit here
 }
+
 
 
 
