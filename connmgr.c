@@ -38,14 +38,12 @@ void *handleConnection(void *arg) {
     else
         printf("Error occurred on connection to peer\n");
     tcp_close(&client);
-    printf("client is now closed\n");
     pthread_mutex_unlock(&mutex);
     pthread_exit(NULL);
     return NULL;
 }
 
 int main(int argc, char *argv[]) {
-    printf("main func start\n");
     tcpsock_t *server, *client;
     int MAX_CONN = atoi(argv[2]);
     int PORT = atoi(argv[1]);
@@ -77,33 +75,23 @@ int main(int argc, char *argv[]) {
 
     } while (conn_counter < MAX_CONN);
 
-    // Separate loop to check disconnected clients and wait for threads
+
     while (disconnected_clients < MAX_CONN) {
         pthread_join(thread_ids[i], NULL);
         i++;
         if (i >= MAX_CONN) {
-            i = 0;  // Reset i to 0 to avoid exceeding array bounds
+            i = 0;
         }
     }
 
-
-
-    pthread_mutex_lock(&mutex);  // Lock to ensure no new connections
+    //pthread_mutex_lock(&mutex);
     if (disconnected_clients >= MAX_CONN) {
-        printf("server side socket will get closed\n");
         if (tcp_close(&server) != TCP_NO_ERROR)
             exit(EXIT_FAILURE);
-        printf("Test server is shutting down\n");
+        printf("server is shutting down\n");
 
-        pthread_mutex_unlock(&mutex);
+        //pthread_mutex_unlock(&mutex);
         pthread_mutex_destroy(&mutex);
         return 0;
     }
-    pthread_mutex_unlock(&mutex);
-
-    pthread_mutex_destroy(&mutex);
-    return 0;
-
-
-
 }
