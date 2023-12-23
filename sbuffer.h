@@ -7,6 +7,7 @@ typedef struct sbuffer sbuffer_t;
 #define SBUFFER_FAILURE -1
 #define SBUFFER_NO_DATA -2
 extern sbuffer_t *shared_buffer;
+int sbuffer_size(sbuffer_t *buffer);
 int sbuffer_init(sbuffer_t **buffer);
 int sbuffer_free(sbuffer_t **buffer);
 int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data);

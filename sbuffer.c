@@ -13,12 +13,14 @@ struct sbuffer {
     sbuffer_node_t *head;
     sbuffer_node_t *tail;
     pthread_mutex_t mutex;
+    int count;
 };
 int sbuffer_init(sbuffer_t **buffer) {//initialising array, same as always
     *buffer = malloc(sizeof(sbuffer_t));
     if (*buffer == NULL) return SBUFFER_FAILURE;
     (*buffer)->head = NULL;
     (*buffer)->tail = NULL;
+    (*buffer)->count = 0;
     pthread_mutex_init(&((*buffer)->mutex), NULL);
     return SBUFFER_SUCCESS;
 }
@@ -35,6 +37,7 @@ int sbuffer_free(sbuffer_t **buffer) { //free allocated mem, but witj mutually e
     }
     pthread_mutex_unlock(&((*buffer)->mutex));
     pthread_mutex_destroy(&((*buffer)->mutex));
+    (*buffer)->count = 0;
     free(*buffer);
     *buffer = NULL;
     return SBUFFER_SUCCESS;
@@ -50,6 +53,7 @@ int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, agai
         pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_NO_DATA;
     }
+    buffer->count--;
     *data = buffer->head->data;
     newNode = buffer->head;
     if (buffer->head == buffer->tail) {
@@ -73,6 +77,7 @@ int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
         pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_FAILURE;
     }
+    buffer->count++;
     newNode->data = *data;
     newNode->next = NULL;
     if (buffer->tail == NULL) {
@@ -83,6 +88,14 @@ int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
     }
     pthread_mutex_unlock(&(buffer->mutex));
     return SBUFFER_SUCCESS;
+}
+
+int sbuffer_size(sbuffer_t *buffer) {
+    if (buffer == NULL) {
+        return -1; // Invalid buffer
+    }
+
+    return buffer->count;
 }
 
 

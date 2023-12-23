@@ -14,7 +14,7 @@ int i = 0;
 int conn_counter = 0;
 int disconnected_clients = 0;
 sbuffer_t *shared_buffer;
-int connmgr_finished = 0;
+int first_insertion = 1;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 
@@ -35,7 +35,17 @@ void *handleConnection(void *arg) {
         if ((result == TCP_NO_ERROR) && bytes) {
             printf("sensor id = %" PRIu16 " - temperature = %g - timestamp = %ld\n", data.id, data.value,
                    (long int)data.ts);
-            sbuffer_insert(shared_buffer, &data);
+            if(first_insertion == 1)
+            {
+                if(sbuffer_insert(shared_buffer, &data) == SBUFFER_SUCCESS)
+                {
+                    printf("insertion of data into buffer successful\n");
+                    first_insertion = 0;
+                }
+            }
+            else{
+                sbuffer_insert(shared_buffer, &data);
+            }
         }
     } while (result == TCP_NO_ERROR);
 
