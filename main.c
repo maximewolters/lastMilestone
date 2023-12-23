@@ -5,46 +5,56 @@
 #include "config.h"
 #include "connmgr.h"
 
-FILE *output_file;
+
 int port;
 int max_conn;
 void *start_connection_manager(void *arg);
 pthread_cond_t readers_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t readers_mutex = PTHREAD_MUTEX_INITIALIZER;
 int exit_readers = 0;
+int exit_storage_manager = 0;
 
 
 
-void *storage_manager(void *arg) { //func for the reader thread
-    printf("storage manager startup\n");
-    sbuffer_t *buffer = (sbuffer_t *)arg;
+void *storage_manager(void *arg) {
+    // Open CSV file for write
+    FILE *csv = fopen("sensor_data_out.csv", "w");
+    if (csv == NULL) {
+        perror("Error opening CSV file");
+        pthread_exit(NULL);
+    }
+
     sensor_data_t data;
 
     while (1) {
-        //printf("entering while loop for write\n");
         pthread_mutex_lock(&readers_mutex);
-        while (!exit_readers && sbuffer_remove(buffer, &data) != SBUFFER_SUCCESS) {
-            pthread_cond_wait(&readers_cond, &readers_mutex);
-        }
-        pthread_mutex_unlock(&readers_mutex);
-        if (exit_readers) {
-            printf("exit\n");
-            break;
-        }
-        if (data.id == 0 && data.value == 0 && data.ts == 0) {
-            printf("no data\n");
-            break;
-        }
-        if(fprintf(output_file, "%d,%lf,%lu\n", data.id, data.value, data.ts)<0){
-            printf("error while writing data to file\n");
-        }
-        //printf("Data written to CSV: id=%d, value=%lf, timestamp=%lu\n", data.id, data.value, data.ts);
 
-        usleep(25000);
+        // Process data in the buffer
+        while (sbuffer_size(shared_buffer) > 0) {
+            if (sbuffer_remove(shared_buffer, &data) == SBUFFER_SUCCESS) {
+                // Insert data into the CSV file
+                fprintf(csv, "%d,%lf,%lu\n", data.id, data.value, data.ts);
+            }
+        }
+
+        pthread_mutex_unlock(&readers_mutex);
+
+        // Check if it's time to exit
+        if (exit_storage_manager) {
+            break;
+        }
+
+        usleep(25000);  // Sleep for 25 microseconds
     }
 
+    fclose(csv);  // Close CSV file
+    pthread_exit(NULL);
     return NULL;
 }
+
+
+
+
 
 
 int main(int argc, char* argv[]) {
@@ -62,12 +72,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Open output file
-    output_file = fopen("sensor_data_out.csv", "w");
-    if (output_file == NULL) {
-        perror("Error opening output file");
-        exit(EXIT_FAILURE);
-    }
+
 
     // Create threads for readers and writer
     pthread_create(&connection_manager, NULL, start_connection_manager, NULL);
@@ -77,13 +82,19 @@ int main(int argc, char* argv[]) {
     /*the problem is in this block of code, because here the exit_readers gets
      * set to 1 when the reader is only just running
      * this makes it so that the reader immediately exits.*/
+
     pthread_mutex_lock(&readers_mutex);
     exit_readers = 1;
     pthread_cond_signal(&readers_cond);
     pthread_mutex_unlock(&readers_mutex);
 
+
     // Wait for all threads to finish
     pthread_join(connection_manager, NULL);
+    // Set the exit_storage_manager flag after connection_manager has finished
+    pthread_mutex_lock(&readers_mutex);
+    exit_storage_manager = 1;
+    pthread_mutex_unlock(&readers_mutex);
     pthread_join(reader1, NULL);
 
 
@@ -105,7 +116,6 @@ int main(int argc, char* argv[]) {
         printf("Error opening CSV file for checking.\n");
     }
 
-    fclose(output_file);
     sbuffer_free(&shared_buffer);
 
     return 0;
@@ -114,10 +124,12 @@ int main(int argc, char* argv[]) {
 
 void *start_connection_manager(void *arg) {
     // Start the server and connection manager
-    connmgrMain(port, max_conn, shared_buffer);
+    int result = connmgrMain(port, max_conn, shared_buffer);
 
     pthread_mutex_lock(&readers_mutex);
-    exit_readers = 1;
+    if(result ==0){ // this is if statement is just to make sure the connmgrMain is really finished
+        exit_readers = 1;
+    }
     pthread_cond_signal(&readers_cond);
     pthread_mutex_unlock(&readers_mutex);
 

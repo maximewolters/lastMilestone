@@ -15,12 +15,12 @@ int conn_counter = 0;
 int disconnected_clients = 0;
 sbuffer_t *shared_buffer;
 int first_insertion = 1;
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 
 void *handleConnection(void *arg) {
     tcpsock_t *client = *((tcpsock_t **)arg);
     pthread_mutex_lock(&mutex);
+
     do {
         // read sensor ID
         bytes = sizeof(data.id);
@@ -106,7 +106,7 @@ int connmgrMain(int port, int max_conn, sbuffer_t *sbuffer) {
 
         //pthread_mutex_unlock(&mutex);
         pthread_mutex_destroy(&mutex);
-        pthread_exit(NULL);
+        return 0;
     }
     return 0;
 }
