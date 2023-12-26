@@ -12,4 +12,5 @@ int sbuffer_init(sbuffer_t **buffer);
 int sbuffer_free(sbuffer_t **buffer);
 int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data);
 int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data);
+int sbuffer_peek(sbuffer_t *buffer, sensor_data_t *data);
 #endif /* SBUFFER_H */

@@ -4,17 +4,8 @@
 #include "sbuffer.h"
 #include "config.h"
 //making the structs
-typedef struct sbuffer_node {
-    struct sbuffer_node *next;
-    sensor_data_t data;
-} sbuffer_node_t;
 
-struct sbuffer {
-    sbuffer_node_t *head;
-    sbuffer_node_t *tail;
-    pthread_mutex_t mutex;
-    int count;
-};
+
 int sbuffer_init(sbuffer_t **buffer) {//initialising array, same as always
     *buffer = malloc(sizeof(sbuffer_t));
     if (*buffer == NULL) return SBUFFER_FAILURE;
@@ -54,7 +45,7 @@ int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, agai
         return SBUFFER_NO_DATA;
     }
     buffer->count--;
-    *data = buffer->head->data;
+    *data = *buffer->head->data;
     newNode = buffer->head;
     if (buffer->head == buffer->tail) {
         buffer->head = buffer->tail = NULL;
@@ -78,7 +69,7 @@ int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
         return SBUFFER_FAILURE;
     }
     buffer->count++;
-    newNode->data = *data;
+    newNode->data = data;
     newNode->next = NULL;
     if (buffer->tail == NULL) {
         buffer->head = buffer->tail = newNode;
@@ -96,6 +87,27 @@ int sbuffer_size(sbuffer_t *buffer) {
     }
 
     return buffer->count;
+}
+
+
+int sbuffer_peek(sbuffer_t *buffer, sensor_data_t *data) {
+    if (buffer == NULL || data == NULL) {
+        return SBUFFER_FAILURE;
+    }
+
+    pthread_mutex_lock(&buffer->mutex);
+
+    if (buffer->tail == NULL) {
+        pthread_mutex_unlock(&buffer->mutex);
+        return SBUFFER_NO_DATA;
+    }
+
+    // Copy data from the first node without removing it
+    *data = *buffer->tail->data;
+
+    pthread_mutex_unlock(&buffer->mutex);
+
+    return SBUFFER_SUCCESS;
 }
 
 

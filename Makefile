@@ -11,7 +11,7 @@ clean:
 sensor_node: sensor_node.c lib/tcpsock.c sbuffer.c
 	$(CC) $(CFLAGS) $^ -o $@
 
-main: main.c lib/tcpsock.c sbuffer.c connmgr.c
+main: main.c lib/tcpsock.c sbuffer.c connmgr.c datamgr.c  # Include datamgr.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 runserver: main
