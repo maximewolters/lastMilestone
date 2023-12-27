@@ -13,6 +13,9 @@
 // Created by maxime on 9/11/23.
 //
 
+
+int exit_data_manager = 0;
+
 SensorList *SensorList_create() {
     SensorList *list;
     list = malloc(sizeof(struct SensorList));
@@ -154,21 +157,37 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
     pthread_mutex_unlock(&mutex_buffer);
     //pthread_cond_signal(&condition_buffer);
     sbuffer_node_t *buffer_node;
+    sbuffer_node_t *next_node;
     buffer_node = buffer->head;
-    while (buffer_node != NULL) {
+    while (1)
+    {
+        printf("exit = %d\n",exit_data_manager);
         pthread_mutex_lock(&mutex_buffer);
-        printf("data manager about to process data\n");
+
+        if(exit_data_manager == 1)
+        {
+            break;
+        }
+        if(buffer_node->next == NULL){
+            next_node = buffer_node;
+        }
+        else{
+            next_node = buffer_node->next;
+        }
+
         SensorNode *sensor_node = sensorList->head;
+
         while (sensor_node->roomID != buffer_node->data->id) {
             sensor_node = sensor_node->next;
         }
-        if(buffer_node->read_by_storage_manager) {
-            if (buffer_node->read_by_data_manager) {
-                sbuffer_remove(buffer, buffer_node->data);
-                printf("shared data removed\n");
+        //delete if read by both storage and data manager
+        if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
+            if (sbuffer_size(shared_buffer) > 2) {
+                sbuffer_remove(shared_buffer, buffer_node->data);
+                printf("data removed\n");
             }
         }
-        else{
+        if(sbuffer_size(shared_buffer) > 0){
             //assign timestamp to last modified
             sensor_node->lastModified = buffer_node->data->ts;
 
@@ -197,6 +216,7 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
             //set read_by_data_manager flag to one
             buffer_node->read_by_data_manager = 1;
             printf("dataloop\n");
+            //pthread_cond_wait(&condition_buffer, &mutex_buffer);
             //log messages still need to be implemented, for now just printstatements
             /*
             if(sensor_node->average > maxTemperature)
@@ -209,10 +229,10 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
             }
             */
         }
-        buffer_node = buffer_node->next;
-        pthread_cond_wait(&condition_buffer, &mutex_buffer);
+        buffer_node = next_node;
         pthread_mutex_unlock(&mutex_buffer);
-        usleep(25000);
+        usleep(250000);
+
     }
     printf("data manager shutting down\n");
     pthread_exit(NULL);
@@ -244,7 +264,10 @@ void fill_list_from_file(const char *filename, SensorList *list) {
     fclose(file);
 }
 
-
+void update_exit()
+{
+    exit_data_manager = 1;
+}
 
 
 

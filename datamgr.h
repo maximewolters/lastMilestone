@@ -98,5 +98,7 @@ void update_sensor_data_from_buffer(sbuffer_t *shared_buffer, double minTemperat
 
 SensorNode *find_sensor_node(SensorList *sensorList, uint16_t sensorID);
 
+void update_exit();
+
 
 #endif  //DATAMGR_H

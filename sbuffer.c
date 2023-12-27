@@ -34,14 +34,14 @@ int sbuffer_free(sbuffer_t **buffer) { //free allocated mem, but witj mutually e
     return SBUFFER_SUCCESS;
 }
 int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, again with mutex flags
-    pthread_mutex_lock(&(buffer->mutex));
+    //pthread_mutex_lock(&(buffer->mutex));
     sbuffer_node_t *newNode;
     if (buffer == NULL) {
-        pthread_mutex_unlock(&(buffer->mutex));
+        //pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_FAILURE;
     }
     if (buffer->head == NULL) {
-        pthread_mutex_unlock(&(buffer->mutex));
+        //pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_NO_DATA;
     }
     buffer->count--;
@@ -53,20 +53,19 @@ int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, agai
         buffer->head = buffer->head->next;
     }
     free(newNode);
-    pthread_mutex_unlock(&(buffer->mutex));
-    printf("node removed\n");
+    //pthread_mutex_unlock(&(buffer->mutex));
     return SBUFFER_SUCCESS;
 }
 int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
-    pthread_mutex_lock(&(buffer->mutex));
+    //pthread_mutex_lock(&(buffer->mutex));
     sbuffer_node_t *newNode;
     if (buffer == NULL) {
-        pthread_mutex_unlock(&(buffer->mutex));
+        //pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_FAILURE;
     }
     newNode = malloc(sizeof(sbuffer_node_t));
     if (newNode == NULL) {
-        pthread_mutex_unlock(&(buffer->mutex));
+        //pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_FAILURE;
     }
     buffer->count++;
@@ -80,7 +79,7 @@ int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
         buffer->tail->next = newNode;
         buffer->tail = buffer->tail->next;
     }
-    pthread_mutex_unlock(&(buffer->mutex));
+    //pthread_mutex_unlock(&(buffer->mutex));
     return SBUFFER_SUCCESS;
 }
 

@@ -44,19 +44,20 @@ int main(int argc, char* argv[]) {
 
     // Create threads
     pthread_create(&connection_manager, NULL, start_connection_manager, NULL);
-    pthread_create(&reader1, NULL, storage_manager, shared_buffer);
     pthread_create(&data_manager, NULL, start_data_manager, NULL);
+    pthread_create(&reader1, NULL, storage_manager, shared_buffer);
     printf("all threads created\n");
 
 
     // Wait for all threads to finish by join
     pthread_join(connection_manager, NULL);
 
-    /* Set the exit_storage_manager flag after connection_manager has finished, this ensures that the storage manager can finish too
+    //Set the exit_storage_manager flag after connection_manager has finished, this ensures that the storage manager can finish too
     pthread_mutex_lock(&shared_buffer->mutex);
     exit_storage_and_data_manager = 1;
+    update_exit();
     pthread_mutex_unlock(&shared_buffer->mutex);
-    */
+
     pthread_join(reader1, NULL);
     pthread_join(data_manager, NULL);
 
@@ -93,6 +94,7 @@ void *start_connection_manager(void *arg) {
     printf("connection manager startup\n");
     // Start the server
     connmgrMain(port, max_conn, shared_buffer, condition_buffer);
+    pthread_cond_signal(&condition_buffer);
     printf("connection manager shut down\n");
     return NULL; // No pthread_exit here
 }
@@ -136,13 +138,14 @@ void *storage_manager(void *arg) {
         perror("Error opening CSV file");
         pthread_exit(NULL);
     }
-    sensor_data_t data;
     /*in this while loop, there is another while loop that checks if the buffer is filled and then removes the
     * data from the buffer. If that is a success, that data gets put in the csv file. if the buffer is empty the
     * storage manager checks if the exit store manager flag is set and if it is it breaks out of the loop
     * and the program exits. Else, it will just wait 25 micro sec before it removes and writes the next set of
     * data.*/
+    //run the remover function
     pthread_mutex_lock(&shared_buffer->mutex);
+    sensor_data_t data;
     while(sbuffer_size(shared_buffer) == 0)
     {
         printf("storage manager waiting for data\n");
@@ -150,39 +153,59 @@ void *storage_manager(void *arg) {
     }
     pthread_mutex_unlock(&shared_buffer->mutex);
     //pthread_cond_signal(&condition_buffer);
-    printf("storage manager about to process data\n");
     // Process data in the buffer
     sbuffer_node_t *buffer_node;
+    sbuffer_node_t *next_node;
     buffer_node = shared_buffer->head;
-    printf("check1\n");
-    while (buffer_node != NULL) {
-        pthread_mutex_lock(&shared_buffer->mutex);
-        printf("check2\n");
-        if(buffer_node->read_by_data_manager)
+    while (1) {
+        if(buffer_node == NULL)
         {
-            printf("check3\n");
-            // Insert data into the CSV file
-            fprintf(csv, "%d,%lf,%lu\n", buffer_node->data->id, buffer_node->data->value, buffer_node->data->ts);
-            printf("check4\n");
-            sbuffer_remove(shared_buffer, &data);
-            printf("check5\n");
-            buffer_node->read_by_storage_manager = 1;
-            printf("storloop\n");
+            //if the buffer node is null->wait
+            printf("ERROR");
+            pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
+            buffer_node = shared_buffer->head;
         }
+        if(exit_storage_and_data_manager == 1)
+        {
+            break;
+        }
+        pthread_mutex_lock(&shared_buffer->mutex);
+        if(buffer_node->next == NULL)
+        {
+            next_node = buffer_node;
+        }
+        else
+        {
+            next_node = buffer_node->next;
+        }
+        data = *buffer_node->data;
+        if(sbuffer_size(shared_buffer) > 0)
+        {
+            // Insert data into the CSV file
+            fprintf(csv, "%d,%lf,%lu\n", data.id, data.value, data.ts);
+            buffer_node->read_by_storage_manager = 1;
+            printf("storageloop\n");
+            buffer_node = next_node;
+            //pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
 
-        buffer_node = buffer_node->next;
-
-        pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
-
+        }
+        if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
+            if (sbuffer_size(shared_buffer) > 2) {
+                sbuffer_remove(shared_buffer, buffer_node->data);
+                printf("data removed\n");
+            }
+        }
         pthread_mutex_unlock(&shared_buffer->mutex);
-        printf("check6\n");
-        usleep(25000);  // Sleep for 25 microseconds
+        usleep(250000);  // Sleep for 25 microseconds
+
     }
     printf("storage manager shutting down\n");
+    sbuffer_free(&shared_buffer);
     fclose(csv);  // Close CSV file
     pthread_exit(NULL);
     return NULL;
 }
+
 
 
 

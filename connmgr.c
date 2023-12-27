@@ -49,7 +49,8 @@ void *handleConnection(void *arg) {
                 sbuffer_insert(shared_buffer, &data);
                 pthread_cond_signal(&condition_buffer);
             }
-        }pthread_mutex_unlock(&mutex);
+        }
+        pthread_mutex_unlock(&mutex);
     } while (result == TCP_NO_ERROR);
 
     if (result == TCP_CONNECTION_CLOSED){
