@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
     // Create threads
     pthread_create(&connection_manager, NULL, start_connection_manager, NULL);
     pthread_create(&data_manager, NULL, start_data_manager, NULL);
+    usleep(250000);
     pthread_create(&reader1, NULL, storage_manager, shared_buffer);
     printf("all threads created\n");
 
@@ -158,7 +159,10 @@ void *storage_manager(void *arg) {
     sbuffer_node_t *next_node;
     buffer_node = shared_buffer->head;
     while (1) {
-        int actions_performed = 0;
+        if(exit_storage_and_data_manager == 1)
+        {
+            break;
+        }
         if(buffer_node == NULL)
         {
             //if the buffer node is null->wait
@@ -166,39 +170,43 @@ void *storage_manager(void *arg) {
             pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
             buffer_node = shared_buffer->head;
         }
-        if(exit_storage_and_data_manager == 1)
-        {
-            break;
-        }
-        pthread_mutex_lock(&shared_buffer->mutex);
-        if(buffer_node->next == NULL && buffer_node->read_by_storage_manager == 0) // hier zit het probleem dat als de volgende node NULL is dat het programma gewoon dit opnieuw zal uitvoeren. Hetzelfde geldt bij datamanager, dus dit moet aangepast worden.
-        {
-            next_node = buffer_node;
-        }
-        else
-        {
+        while(buffer_node->next != NULL){
+            pthread_mutex_lock(&shared_buffer->mutex);
+            int actions_performed = 0;
+            data = *buffer_node->data;
             next_node = buffer_node->next;
-        }
-        data = *buffer_node->data;
-        if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_storage_manager == 0)
-        {
-            // Insert data into the CSV file
-            fprintf(csv, "%d,%lf,%lu\n", data.id, data.value, data.ts);
-            buffer_node->read_by_storage_manager = 1;
-            printf("storageloop\n");
-            actions_performed++;
-            buffer_node = next_node;
+            if(exit_storage_and_data_manager == 1)
+            {
+                break;
+            }
+            if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
+                if (sbuffer_size(shared_buffer) > 2) {
+                    sbuffer_remove(shared_buffer, buffer_node->data);
+                    printf("data removed\n");
+                    actions_performed++;
+                    buffer_node = next_node;
+
+                }
+            }
+            if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_storage_manager == 0 && actions_performed != 1)
+            {
+                // Insert data into the CSV file
+                fprintf(csv, "%d,%lf,%lu\n", data.id, data.value, data.ts);
+                buffer_node->read_by_storage_manager = 1;
+                printf("storageloop\n");
+                buffer_node = next_node;
+
+
+            }
+            if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager != 1){
+                continue;
+            }
+            pthread_mutex_unlock(&shared_buffer->mutex);
+            usleep(250000);
 
         }
-        if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1 && actions_performed != 1){
-            if (sbuffer_size(shared_buffer) > 2) {
-                sbuffer_remove(shared_buffer, buffer_node->data);
-                printf("data removed\n");
-                buffer_node = next_node;
-            }
-        }
-        pthread_mutex_unlock(&shared_buffer->mutex);
-        usleep(250000);  // Sleep for 25 microseconds
+         // Sleep for 25 microseconds
+
 
     }
     printf("storage manager shutting down\n");

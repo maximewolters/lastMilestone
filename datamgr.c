@@ -161,80 +161,87 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
     buffer_node = buffer->head;
     while (1)
     {
-        int actions_performed = 0;
-        pthread_mutex_lock(&mutex_buffer);
-
         if(exit_data_manager == 1)
         {
             break;
         }
-        if(buffer_node->next == NULL){
-            next_node = buffer_node;
-        }
-        else{
+        while(buffer_node->next != NULL)
+        {
+            int actions_performed = 0;
             next_node = buffer_node->next;
-        }
+            pthread_mutex_lock(&mutex_buffer);
 
-        SensorNode *sensor_node = sensorList->head;
-
-        while (sensor_node->roomID != buffer_node->data->id) {
-            sensor_node = sensor_node->next;
-        }
-        //delete if read by both storage and data manager
-        if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
-            if (sbuffer_size(shared_buffer) > 2) {
-                sbuffer_remove(shared_buffer, buffer_node->data);
-                printf("data removed\n");
-                actions_performed++;
-                buffer_node = next_node;
-            }
-        }
-        if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_data_manager == 0 && actions_performed != 1){
-            //assign timestamp to last modified
-            sensor_node->lastModified = buffer_node->data->ts;
-
-            //update the temperatures[RUN_AVG_LENGTH] array
-            for (int i = RUN_AVG_LENGTH - 1; i > 0; i--) {
-                sensor_node->temperatures[i] = sensor_node->temperatures[i - 1];
-            }
-            // Add a new element at the first index
-            sensor_node->temperatures[0] = buffer_node->data->value;
-
-            //count the number of temperatures that are not zero, then update the average according to the number of available temperatures
-            int count_temp_not_zero = 0;
-            double sum_of_temperatures = 0;
-            for(int i = 0; i < RUN_AVG_LENGTH; i++)
+            if(exit_data_manager == 1)
             {
-                if(sensor_node->temperatures[i] != 0.0)
-                {
-                    count_temp_not_zero++;
-                    sum_of_temperatures += sensor_node->temperatures[i];
+                break;
+            }
+            SensorNode *sensor_node = sensorList->head;
+
+            while (sensor_node->roomID != buffer_node->data->id) {
+                sensor_node = sensor_node->next;
+            }
+            //delete if read by both storage and data manager
+            if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
+                if (sbuffer_size(shared_buffer) > 2) {
+                    sbuffer_remove(shared_buffer, buffer_node->data);
+                    printf("data removed\n");
+                    buffer_node = next_node;
+                    actions_performed++;
+
                 }
             }
-            if(count_temp_not_zero == 0){
-                count_temp_not_zero++;
-            }
-            sensor_node->average = (sum_of_temperatures/count_temp_not_zero);
-            //set read_by_data_manager flag to one
-            buffer_node->read_by_data_manager = 1;
-            printf("dataloop\n");
-            buffer_node = next_node;
+            if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_data_manager == 0 && actions_performed != 1){
+                //assign timestamp to last modified
+                sensor_node->lastModified = buffer_node->data->ts;
 
-            //pthread_cond_wait(&condition_buffer, &mutex_buffer);
-            //log messages still need to be implemented, for now just printstatements
-            /*
-            if(sensor_node->average > maxTemperature)
-            {
-                printf("average temperature exceeding maximal temp for sensor node with id: %d", sensor_node->sensorID);
+                //update the temperatures[RUN_AVG_LENGTH] array
+                for (int i = RUN_AVG_LENGTH - 1; i > 0; i--) {
+                    sensor_node->temperatures[i] = sensor_node->temperatures[i - 1];
+                }
+                // Add a new element at the first index
+                sensor_node->temperatures[0] = buffer_node->data->value;
+
+                //count the number of temperatures that are not zero, then update the average according to the number of available temperatures
+                int count_temp_not_zero = 0;
+                double sum_of_temperatures = 0;
+                for(int i = 0; i < RUN_AVG_LENGTH; i++)
+                {
+                    if(sensor_node->temperatures[i] != 0.0)
+                    {
+                        count_temp_not_zero++;
+                        sum_of_temperatures += sensor_node->temperatures[i];
+                    }
+                }
+                if(count_temp_not_zero == 0){
+                    count_temp_not_zero++;
+                }
+                sensor_node->average = (sum_of_temperatures/count_temp_not_zero);
+                //set read_by_data_manager flag to one
+                buffer_node->read_by_data_manager = 1;
+                buffer_node = next_node;
+                printf("dataloop\n");
+
+
+                //pthread_cond_wait(&condition_buffer, &mutex_buffer);
+                //log messages still need to be implemented, for now just printstatements
+                /*
+                if(sensor_node->average > maxTemperature)
+                {
+                    printf("average temperature exceeding maximal temp for sensor node with id: %d", sensor_node->sensorID);
+                }
+                if(sensor_node->average < minTemperature)
+                {
+                    printf("average temperature exceeding minimal temp for sensor node with id: %d", sensor_node->sensorID);
+                }
+                */
             }
-            if(sensor_node->average < minTemperature)
-            {
-                printf("average temperature exceeding minimal temp for sensor node with id: %d", sensor_node->sensorID);
+            if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager != 1){
+                continue;
             }
-            */
+            pthread_mutex_unlock(&mutex_buffer);
+            usleep(250000);
+
         }
-        pthread_mutex_unlock(&mutex_buffer);
-        usleep(250000);
 
     }
     printf("data manager shutting down\n");

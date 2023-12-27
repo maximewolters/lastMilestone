@@ -60,12 +60,12 @@ int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
     pthread_mutex_lock(&(buffer->mutex));
     sbuffer_node_t *newNode;
     if (buffer == NULL) {
-        //pthread_mutex_unlock(&(buffer->mutex));
+        pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_FAILURE;
     }
     newNode = malloc(sizeof(sbuffer_node_t));
     if (newNode == NULL) {
-        //pthread_mutex_unlock(&(buffer->mutex));
+        pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_FAILURE;
     }
     buffer->count++;
