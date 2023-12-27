@@ -19,9 +19,10 @@ int first_insertion = 1;
 
 void *handleConnection(void *arg) {
     tcpsock_t *client = *((tcpsock_t **)arg);
-    pthread_mutex_lock(&mutex);
+
 
     do {
+        pthread_mutex_lock(&mutex);
         // read sensor ID
         bytes = sizeof(data.id);
         result = tcp_receive(client, (void *)&data.id, &bytes);
@@ -48,7 +49,7 @@ void *handleConnection(void *arg) {
                 sbuffer_insert(shared_buffer, &data);
                 pthread_cond_signal(&condition_buffer);
             }
-        }
+        }pthread_mutex_unlock(&mutex);
     } while (result == TCP_NO_ERROR);
 
     if (result == TCP_CONNECTION_CLOSED){
@@ -57,7 +58,7 @@ void *handleConnection(void *arg) {
     else
         printf("Error occurred on connection to peer\n");
     tcp_close(&client);
-    pthread_mutex_unlock(&mutex);
+
     pthread_exit(NULL);
 }
 

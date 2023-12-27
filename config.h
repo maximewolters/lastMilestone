@@ -22,8 +22,8 @@ typedef struct {
 typedef struct sbuffer_node {
     struct sbuffer_node *next;
     sensor_data_t *data;
-    short read_by_storage_manager;
-    short read_by_data_manager;
+    int read_by_storage_manager;
+    int read_by_data_manager;
 } sbuffer_node_t;
 
 struct sbuffer {

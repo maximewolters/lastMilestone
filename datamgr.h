@@ -38,7 +38,7 @@ typedef struct SensorList {
 } SensorList;
 
 typedef struct SensorNode {
-    uint16_t sensorID;
+    sensor_id_t sensorID;
     uint16_t roomID;
     double average;
     time_t lastModified;

@@ -54,6 +54,7 @@ int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, agai
     }
     free(newNode);
     pthread_mutex_unlock(&(buffer->mutex));
+    printf("node removed\n");
     return SBUFFER_SUCCESS;
 }
 int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
@@ -71,6 +72,8 @@ int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
     buffer->count++;
     newNode->data = data;
     newNode->next = NULL;
+    newNode->read_by_storage_manager= 0;
+    newNode->read_by_data_manager = 0;
     if (buffer->tail == NULL) {
         buffer->head = buffer->tail = newNode;
     } else {
