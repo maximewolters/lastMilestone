@@ -158,6 +158,7 @@ void *storage_manager(void *arg) {
     sbuffer_node_t *next_node;
     buffer_node = shared_buffer->head;
     while (1) {
+        int actions_performed = 0;
         if(buffer_node == NULL)
         {
             //if the buffer node is null->wait
@@ -170,7 +171,7 @@ void *storage_manager(void *arg) {
             break;
         }
         pthread_mutex_lock(&shared_buffer->mutex);
-        if(buffer_node->next == NULL)
+        if(buffer_node->next == NULL && buffer_node->read_by_storage_manager == 0) // hier zit het probleem dat als de volgende node NULL is dat het programma gewoon dit opnieuw zal uitvoeren. Hetzelfde geldt bij datamanager, dus dit moet aangepast worden.
         {
             next_node = buffer_node;
         }
@@ -179,20 +180,21 @@ void *storage_manager(void *arg) {
             next_node = buffer_node->next;
         }
         data = *buffer_node->data;
-        if(sbuffer_size(shared_buffer) > 0)
+        if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_storage_manager == 0)
         {
             // Insert data into the CSV file
             fprintf(csv, "%d,%lf,%lu\n", data.id, data.value, data.ts);
             buffer_node->read_by_storage_manager = 1;
             printf("storageloop\n");
+            actions_performed++;
             buffer_node = next_node;
-            //pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
 
         }
-        if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
+        if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1 && actions_performed != 1){
             if (sbuffer_size(shared_buffer) > 2) {
                 sbuffer_remove(shared_buffer, buffer_node->data);
                 printf("data removed\n");
+                buffer_node = next_node;
             }
         }
         pthread_mutex_unlock(&shared_buffer->mutex);

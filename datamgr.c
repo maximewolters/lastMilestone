@@ -161,7 +161,7 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
     buffer_node = buffer->head;
     while (1)
     {
-        printf("exit = %d\n",exit_data_manager);
+        int actions_performed = 0;
         pthread_mutex_lock(&mutex_buffer);
 
         if(exit_data_manager == 1)
@@ -185,9 +185,11 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
             if (sbuffer_size(shared_buffer) > 2) {
                 sbuffer_remove(shared_buffer, buffer_node->data);
                 printf("data removed\n");
+                actions_performed++;
+                buffer_node = next_node;
             }
         }
-        if(sbuffer_size(shared_buffer) > 0){
+        if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_data_manager == 0 && actions_performed != 1){
             //assign timestamp to last modified
             sensor_node->lastModified = buffer_node->data->ts;
 
@@ -216,6 +218,8 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
             //set read_by_data_manager flag to one
             buffer_node->read_by_data_manager = 1;
             printf("dataloop\n");
+            buffer_node = next_node;
+
             //pthread_cond_wait(&condition_buffer, &mutex_buffer);
             //log messages still need to be implemented, for now just printstatements
             /*
@@ -229,7 +233,6 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
             }
             */
         }
-        buffer_node = next_node;
         pthread_mutex_unlock(&mutex_buffer);
         usleep(250000);
 

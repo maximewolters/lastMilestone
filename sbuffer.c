@@ -57,7 +57,7 @@ int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, agai
     return SBUFFER_SUCCESS;
 }
 int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
-    //pthread_mutex_lock(&(buffer->mutex));
+    pthread_mutex_lock(&(buffer->mutex));
     sbuffer_node_t *newNode;
     if (buffer == NULL) {
         //pthread_mutex_unlock(&(buffer->mutex));
@@ -79,7 +79,7 @@ int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
         buffer->tail->next = newNode;
         buffer->tail = buffer->tail->next;
     }
-    //pthread_mutex_unlock(&(buffer->mutex));
+    pthread_mutex_unlock(&(buffer->mutex));
     return SBUFFER_SUCCESS;
 }
 

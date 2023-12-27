@@ -18,11 +18,11 @@ int first_insertion = 1;
 
 
 void *handleConnection(void *arg) {
+    pthread_mutex_lock(&mutex);
     tcpsock_t *client = *((tcpsock_t **)arg);
 
 
     do {
-        pthread_mutex_lock(&mutex);
         // read sensor ID
         bytes = sizeof(data.id);
         result = tcp_receive(client, (void *)&data.id, &bytes);
@@ -50,8 +50,9 @@ void *handleConnection(void *arg) {
                 pthread_cond_signal(&condition_buffer);
             }
         }
-        pthread_mutex_unlock(&mutex);
+
     } while (result == TCP_NO_ERROR);
+    pthread_mutex_unlock(&mutex);
 
     if (result == TCP_CONNECTION_CLOSED){
         printf("Peer has closed connection\n");
