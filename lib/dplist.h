@@ -8,6 +8,7 @@
 #include <stdint-gcc.h>
 #include <bits/types/time_t.h>
 #include "../datamgr.h"
+#include "pthread.h"
 
 typedef enum {
     false, true

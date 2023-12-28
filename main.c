@@ -9,9 +9,6 @@
 #include <string.h>
 #include "sensor_db.h"
 
-#define SET_MIN_TEMP 10.0
-#define SET_MAX_TEMP 15.0
-
 int port;
 int max_conn;
 
@@ -21,6 +18,23 @@ void *start_storage_manager(void *arg);
 void *start_log_process(void *arg);
 void write_log_event(FILE *log_file, const char *event);
 
+#ifdef SET_MIN_TEMP
+const double MIN_TEMP = SET_MIN_TEMP;
+#else
+const double MIN_TEMP = 10;
+#endif
+
+#ifdef SET_MAX_TEMP
+const double MAX_TEMP = SET_MAX_TEMP;
+#else
+const double MAX_TEMP = 20;
+#endif
+
+#ifdef time_out
+const int time_out = TIMEOUT;
+#else
+const int time_out = 5;
+#endif
 
 pthread_cond_t condition_buffer = PTHREAD_COND_INITIALIZER;
 
@@ -34,10 +48,11 @@ int sequence_number;
 
 
 int main(int argc, char* argv[]) {
-
+    printf("MAX_TEMP = %f, MIN_TEMP = %f\n", MAX_TEMP, MIN_TEMP);
     //initialising the port and max_conn that get passed by the arguments
     port = atoi(argv[1]);
     max_conn = atoi(argv[2]);
+    //initialising max and min temperature
 
     //check if the right arguments are filled in
     if(argc < 3) {
@@ -189,16 +204,13 @@ void *start_data_manager(void *arg) {
     printf("data manager startup\n");
     // Initialize the linked list
     SensorList *sensorList = SensorList_create();
-    // Initialize minimum and maximum temperature values
-    double minTemperature = SET_MIN_TEMP;
-    double maxTemperature = SET_MAX_TEMP;
     //open the file out of which the datamanager should read the room id's and the sensor id's
     FILE *map = fopen("room_sensor.map", "r");
     // Fill the linked list with nodes from room_sensor.map
     fill_list_from_file("room_sensor.map", sensorList);
     printf("sensor list is filled with initial values\n");
     // Update nodes with sensor data from the shared buffer data
-    update_sensor_data_from_buffer(shared_buffer, minTemperature, maxTemperature, sensorList, shared_buffer->mutex);
+    update_sensor_data_from_buffer(shared_buffer, sensorList, shared_buffer->mutex);
 
     // Print the contents of the linked list to test if main func works, preprocessor directives are not yet used
     SensorNode *current = sensorList->head;
@@ -219,18 +231,17 @@ void *start_data_manager(void *arg) {
 void *start_storage_manager(void *arg) {
     printf("storage manager startup\n");
     // Open CSV file to write
-    FILE *csv = open_db("csv", false);
-
-    pthread_mutex_lock(&shared_buffer->mutex);
+    FILE *csv = open_db("sensor_data_out.csv", false);
     while(sbuffer_size(shared_buffer) == 0)
     {
         printf("storage manager waiting for data\n");
         pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
     }
-    pthread_mutex_unlock(&shared_buffer->mutex);
 
-    pthread_mutex_lock(&shared_buffer->mutex);
+
+    //printf("storage manager mutex locked\n");
     while (1) {
+        pthread_mutex_lock(&shared_buffer->mutex);
         if (exit_storage_and_data_manager == 1) {
             pthread_mutex_unlock(&shared_buffer->mutex);
             break;
@@ -259,9 +270,9 @@ void *start_storage_manager(void *arg) {
                 buffer_node->read_by_storage_manager = 1;
                 printf("storageloop\n");
                 buffer_node = buffer_node->next;
+                printf("checker\n");
             }
         }
-
         pthread_mutex_unlock(&shared_buffer->mutex);
     }
 

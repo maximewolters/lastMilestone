@@ -7,6 +7,34 @@
 
 #include <stdint.h>
 #include <time.h>
+#include "pthread.h"
+#include <unistd.h>
+
+// config.h
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#ifdef SET_MIN_TEMP
+extern const double MIN_TEMP;
+#else
+extern const double MIN_TEMP;
+#endif
+
+#ifdef SET_MAX_TEMP
+extern const double MAX_TEMP;
+#else
+extern const double MAX_TEMP;
+#endif
+
+#ifdef time_out
+extern const int time_out;
+#else
+extern const int time_out;
+#endif
+
+#endif // CONFIG_H
+
 
 typedef uint16_t sensor_id_t;
 typedef double sensor_value_t;
@@ -37,7 +65,7 @@ extern pthread_cond_t condition_buffer;
 
 void write_to_pipe(char *log_event);
 
-char *log_event;
+
 
 
 #endif /* _CONFIG_H_ */

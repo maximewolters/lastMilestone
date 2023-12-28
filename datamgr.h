@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "config.h"
 #include "sbuffer.h"
+#include "pthread.h"
 
 #ifndef RUN_AVG_LENGTH
 #define RUN_AVG_LENGTH 5
@@ -94,7 +95,7 @@ int datamgr_get_total_sensors();
 
 void fill_list_from_file(const char *filename, SensorList *list);
 // Function to read sensor data from shared buffer and update the corresponding node
-void update_sensor_data_from_buffer(sbuffer_t *shared_buffer, double minTemperature, double maxTemperature, SensorList *sensorList, pthread_mutex_t mut);
+void update_sensor_data_from_buffer(sbuffer_t *shared_buffer, SensorList *sensorList, pthread_mutex_t mut);
 
 SensorNode *find_sensor_node(SensorList *sensorList, uint16_t sensorID);
 

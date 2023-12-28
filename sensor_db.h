@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include "pthread.h"
 
 #include <stdbool.h>
 FILE * open_db(const char *filename, bool append);

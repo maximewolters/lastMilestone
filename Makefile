@@ -18,12 +18,12 @@ sensor_gateway : main.c connmgr.c datamgr.c sensor_db.c sbuffer.c lib/libdplist.
 
 #target for a quick build of your source code.
 sensor_gateway_quick :
-	gcc -w -o sensor_gateway main.c connmgr.c datamgr.c sensor_db.c sbuffer.c lib/dplist.c lib/tcpsock.c -DSET_MIN_TEMP=10 -DSET_MAX_TEMP=20 -DTIMEOUT=5 -lpthread 
-		
-sensor_gateway_debug :
-	gcc -g -w -o sensor_gateway main.c connmgr.c datamgr.c sensor_db.c sbuffer.c lib/dplist.c lib/tcpsock.c -DSET_MIN_TEMP=10 -DSET_MAX_TEMP=20 -DTIMEOUT=5 -lpthread 
+	gcc -w -o sensor_gateway main.c connmgr.c datamgr.c sensor_db.c sbuffer.c lib/dplist.c lib/tcpsock.c -DSET_MIN_TEMP=10 -DSET_MAX_TEMP=20 -DTIMEOUT=5 -lpthread
 
-#file_creator program to generate a room map	
+sensor_gateway_debug :
+	gcc -g -w -o sensor_gateway main.c connmgr.c datamgr.c sensor_db.c sbuffer.c lib/dplist.c lib/tcpsock.c -DSET_MIN_TEMP=10 -DSET_MAX_TEMP=20 -DTIMEOUT=5 -lpthread
+
+#file_creator program to generate a room map
 file_creator : file_creator.c
 	@echo "$(TITLE_COLOR)\n***** COMPILE & LINKING file_creator *****$(NO_COLOR)"
 	gcc file_creator.c -o file_creator -Wall -fdiagnostics-color=auto
@@ -60,8 +60,19 @@ clean:
 clean-all: clean
 	rm -rf lib/*.so
 
-run : sensor_gateway sensor_node
-	@echo "Add your own implementation here..."
+runclient1: sensor_node
+	./sensor_node 15 2 127.0.0.1 5678
+
+run: sensor_gateway
+	./sensor_gateway 5678 3
+
+runclient2: sensor_node
+	./sensor_node 21 2 127.0.0.1 5678
+
+runclient3: sensor_node
+	./sensor_node 37 2 127.0.0.1 5678
 
 zip:
 	zip lab_final.zip main.c connmgr.c connmgr.h datamgr.c datamgr.h sbuffer.c sbuffer.h sensor_db.c sensor_db.h config.h lib/dplist.c lib/dplist.h lib/tcpsock.c lib/tcpsock.h
+
+

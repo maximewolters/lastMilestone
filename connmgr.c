@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -5,7 +6,7 @@
 #include "pthread.h"
 #include "config.h"
 #include "sbuffer.h"
-#include <unistd.h>
+
 
 
 int bytes, result;
@@ -16,6 +17,7 @@ int conn_counter = 0;
 int disconnected_clients = 0;
 sbuffer_t *shared_buffer;
 int first_insertion = 1;
+char message[1000];
 
 
 void *handleConnection(void *arg) {
@@ -35,8 +37,8 @@ void *handleConnection(void *arg) {
         if(sensor_insert)
         {
             sensor_insert = 0;
-            sprintf(log_event, "Sensor node %d has opened a new connection", data.id);
-            write_to_pipe(log_event);
+            sprintf(message, "Sensor node %d has opened a new connection", data.id);
+            write_to_pipe(message);
         }
         if ((result == TCP_NO_ERROR) && bytes) {
             printf("sensor id = %" PRIu16 " - temperature = %g - timestamp = %ld\n", data.id, data.value,
@@ -47,7 +49,7 @@ void *handleConnection(void *arg) {
         }
 
         pthread_mutex_unlock(&connection_mutex);
-        usleep(10000);
+        //usleep(10000); make file doesn't allow me to use this even when #include <unistd.h> is included
     } while (result == TCP_NO_ERROR);
     if (result == TCP_CONNECTION_CLOSED){
         pthread_mutex_lock(&connection_mutex);
@@ -56,8 +58,8 @@ void *handleConnection(void *arg) {
         pthread_mutex_unlock(&connection_mutex);}
     else
         printf("Error occurred on connection to peer\n");
-    sprintf(log_event, "Sensor node %d has closed connection", data.id);
-    write_to_pipe(log_event);
+    sprintf(message, "Sensor node %d has closed connection", data.id);
+    write_to_pipe(message);
     tcp_close(&client);
     pthread_exit(NULL);
 }

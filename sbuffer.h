@@ -2,6 +2,7 @@
 #define SBUFFER_H
 #include <stdint.h>
 #include "config.h"
+#include "pthread.h"
 typedef struct sbuffer sbuffer_t;
 #define SBUFFER_SUCCESS 0
 #define SBUFFER_FAILURE -1

@@ -15,6 +15,7 @@
 
 
 int exit_data_manager = 0;
+char log_event[1000];
 
 SensorList *SensorList_create() {
     SensorList *list;
@@ -148,7 +149,7 @@ SensorNode* SensorList_get_reference_at_index(SensorList* list, int index) {
 
 
 // Function to read sensor data from shared buffer and update the corresponding node
-void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, double maxTemperature, SensorList *sensorList, pthread_mutex_t mutex_buffer) {
+void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, pthread_mutex_t mutex_buffer) {
     pthread_mutex_lock(&mutex_buffer);
     while(sbuffer_size(buffer) == 0) {
         printf("data manager waiting for data\n");
@@ -161,6 +162,8 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
     buffer_node = buffer->head;
     while (1)
     {
+        pthread_mutex_lock(&mutex_buffer);
+        //printf("entering dataloop\n");
         if(exit_data_manager == 1)
         {
             break;
@@ -173,15 +176,15 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
             }
             int actions_performed = 0;
             next_node = buffer_node->next;
-            pthread_mutex_lock(&mutex_buffer);
+            printf("data loop mutex lock\n");
             SensorNode *sensor_node = sensorList->head;
-
-            while (sensor_node->roomID != buffer_node->data->id) {
+            while (sensor_node->sensorID != buffer_node->data->id) {
                 sensor_node = sensor_node->next;
             }
+            printf("dataloop selected sensor node\n");
             if(sensor_node == NULL)
             {
-                sprintf(log_event, "Received sensor data with invalid sensor node ID %d.\n", id);
+                sprintf(log_event, "Received sensor data with invalid sensor node ID %d.\n", buffer_node->data->id);
                 write_to_pipe(log_event);
             }
             //delete if read by both storage and data manager
@@ -194,7 +197,8 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
 
                 }
             }
-            if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_data_manager == 0 && actions_performed != 1){
+            if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_data_manager == 0 && actions_performed != 1 && sensor_node != NULL){
+                printf("datamanager performing logic\n");
                 //assign timestamp to last modified
                 sensor_node->lastModified = buffer_node->data->ts;
 
@@ -222,16 +226,15 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
                 sensor_node->average = (sum_of_temperatures/count_temp_not_zero);
                 //set read_by_data_manager flag to one
                 buffer_node->read_by_data_manager = 1;
-                buffer_node = next_node;
                 printf("dataloop\n");
 
 
-                if(sensor_node->average > maxTemperature)
+                if(sensor_node->average > MAX_TEMP)
                 {
                     sprintf(log_event, "Sensor node %d reports it’s too hot (avg temp = %f)", sensor_node->sensorID, sensor_node->average);
                     write_to_pipe(log_event);
                 }
-                if(sensor_node->average < minTemperature)
+                if(sensor_node->average < MIN_TEMP)
                 {
                     sprintf(log_event, "Sensor node %d reports it’s too cold (avg temp = %f)", sensor_node->sensorID, sensor_node->average);
                     write_to_pipe(log_event);
@@ -242,11 +245,13 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
                 pthread_mutex_unlock(&mutex_buffer);
                 continue;
             }
-            pthread_mutex_unlock(&mutex_buffer);
 
         }
+        buffer_node = next_node; //changed this, might affect code but i keep it for now
+        pthread_mutex_unlock(&mutex_buffer);
 
     }
+
     printf("data manager shutting down\n");
     pthread_exit(NULL);
 

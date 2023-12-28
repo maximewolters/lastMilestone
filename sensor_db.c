@@ -3,15 +3,15 @@
 //
 #include "sensor_db.h"
 #include "config.h"
-
+char logev[1000];
 FILE *open_db(const char *filename, bool append) {
     FILE *file = fopen(filename, append ? "a" : "w");
     if (file == NULL) {
         perror("Error opening file");
         return NULL;
     }
-    sprintf(log_event, "A new data.csv file has been created");
-    write_to_pipe(log_event);
+    sprintf(logev, "A new data.csv file has been created");
+    write_to_pipe(logev);
     return file;
 }
 int insert_sensor(FILE *file, sensor_id_t id, sensor_value_t value, sensor_ts_t ts) {
@@ -24,8 +24,8 @@ int insert_sensor(FILE *file, sensor_id_t id, sensor_value_t value, sensor_ts_t 
         perror("Error writing to file");
         return -1;
     }
-    sprintf(log_event, "Data insertion from sensor %d succeeded.", id);
-    write_to_pipe(log_event);
+    sprintf(logev, "Data insertion from sensor %d succeeded.", id);
+    write_to_pipe(logev);
     return 0;
 }
 int close_db(FILE *file) {
@@ -38,8 +38,8 @@ int close_db(FILE *file) {
         perror("Error closing file");
         return -1;
     }
-    sprintf(log_event, "The data.csv file has been closed.");
-    write_to_pipe(log_event);
+    sprintf(logev, "The data.csv file has been closed.");
+    write_to_pipe(logev);
     return 0;
 }
 
