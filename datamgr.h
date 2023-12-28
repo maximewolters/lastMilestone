@@ -11,11 +11,11 @@
 #endif
 
 #ifndef SET_MAX_TEMP
-//#define SET_MAX_TEMP 23
+#define SET_MAX_TEMP 20
 #endif
 
 #ifndef SET_MIN_TEMP
-//#define SET_MIN_TEMP 18
+#define SET_MIN_TEMP 10
 #endif
 
 /*

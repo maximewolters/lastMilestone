@@ -7,7 +7,7 @@
 
 #include <stdint-gcc.h>
 #include <bits/types/time_t.h>
-#include "datamgr.h"
+#include "../datamgr.h"
 
 typedef enum {
     false, true
@@ -20,11 +20,21 @@ typedef struct SensorList SensorList;
 
 typedef struct SensorNode SensorNode;
 
+typedef struct dplist dplist_t;
+typedef struct dplist_node dplist_node_t;
 /* General remark on error handling
  * All functions below will:
  * - use assert() to check if memory allocation was successfully.
  */
+void* element_copy(void * element);
+void element_free(void ** element);
+int element_compare(void * x, void * y);
 
+dplist_t *dpl_create(
+        void* (*element_copy)(void *element),
+        void (*element_free)(void **element),
+        int (*element_compare)(void *x, void *y)
+);
 /** Create and allocate memory for a new list
  * \param element_copy callback function to duplicate 'element'; If needed allocated new memory for the duplicated element.
  * \param element_free callback function to free memory allocated to element

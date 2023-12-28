@@ -19,6 +19,7 @@ int first_insertion = 1;
 
 
 void *handleConnection(void *arg) {
+    short sensor_insert = 1;
     tcpsock_t *client = *((tcpsock_t **)arg);
     do {
         pthread_mutex_lock(&connection_mutex);
@@ -31,6 +32,12 @@ void *handleConnection(void *arg) {
         // read timestamp
         bytes = sizeof(data.ts);
         result = tcp_receive(client, (void *)&data.ts, &bytes);
+        if(sensor_insert)
+        {
+            sensor_insert = 0;
+            sprintf(log_event, "Sensor node %d has opened a new connection", data.id);
+            write_to_pipe(log_event);
+        }
         if ((result == TCP_NO_ERROR) && bytes) {
             printf("sensor id = %" PRIu16 " - temperature = %g - timestamp = %ld\n", data.id, data.value,
                    (long int)data.ts);
@@ -49,6 +56,8 @@ void *handleConnection(void *arg) {
         pthread_mutex_unlock(&connection_mutex);}
     else
         printf("Error occurred on connection to peer\n");
+    sprintf(log_event, "Sensor node %d has closed connection", data.id);
+    write_to_pipe(log_event);
     tcp_close(&client);
     pthread_exit(NULL);
 }

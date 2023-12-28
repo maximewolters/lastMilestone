@@ -35,5 +35,9 @@ struct sbuffer {
 
 extern pthread_cond_t condition_buffer;
 
+void write_to_pipe(char *log_event);
+
+char *log_event;
+
 
 #endif /* _CONFIG_H_ */

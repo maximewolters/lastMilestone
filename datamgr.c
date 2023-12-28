@@ -1,4 +1,4 @@
-#include "dplist.h"
+#include "lib/dplist.h"
 #include "datamgr.h"
 #include "config.h"
 #include <stdio.h>
@@ -179,6 +179,11 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
             while (sensor_node->roomID != buffer_node->data->id) {
                 sensor_node = sensor_node->next;
             }
+            if(sensor_node == NULL)
+            {
+                sprintf(log_event, "Received sensor data with invalid sensor node ID %d.\n", id);
+                write_to_pipe(log_event);
+            }
             //delete if read by both storage and data manager
             if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
                 if (sbuffer_size(shared_buffer) > 2) {
@@ -221,18 +226,17 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
                 printf("dataloop\n");
 
 
-                //pthread_cond_wait(&condition_buffer, &mutex_buffer);
-                //log messages still need to be implemented, for now just printstatements
-                /*
                 if(sensor_node->average > maxTemperature)
                 {
-                    printf("average temperature exceeding maximal temp for sensor node with id: %d", sensor_node->sensorID);
+                    sprintf(log_event, "Sensor node %d reports it’s too hot (avg temp = %f)", sensor_node->sensorID, sensor_node->average);
+                    write_to_pipe(log_event);
                 }
                 if(sensor_node->average < minTemperature)
                 {
-                    printf("average temperature exceeding minimal temp for sensor node with id: %d", sensor_node->sensorID);
+                    sprintf(log_event, "Sensor node %d reports it’s too cold (avg temp = %f)", sensor_node->sensorID, sensor_node->average);
+                    write_to_pipe(log_event);
                 }
-                */
+
             }
             if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager != 1 && actions_performed != 1){
                 pthread_mutex_unlock(&mutex_buffer);
