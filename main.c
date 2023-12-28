@@ -54,13 +54,12 @@ int main(int argc, char* argv[]) {
     pthread_join(connection_manager, NULL);
 
     //Set the exit_storage_manager flag after connection_manager has finished, this ensures that the storage manager can finish too
-    pthread_mutex_lock(&shared_buffer->mutex);
     exit_storage_and_data_manager = 1;
     update_exit();
-    pthread_mutex_unlock(&shared_buffer->mutex);
 
-    pthread_join(reader1, NULL);
     pthread_join(data_manager, NULL);
+    pthread_join(reader1, NULL);
+
 
     //quick check if the buffer is empty at the end
     printf("Final buffer size: %d\n", sbuffer_size(shared_buffer));
@@ -95,7 +94,6 @@ void *start_connection_manager(void *arg) {
     printf("connection manager startup\n");
     // Start the server
     connmgrMain(port, max_conn, shared_buffer, condition_buffer);
-    pthread_cond_signal(&condition_buffer);
     printf("connection manager shut down\n");
     return NULL; // No pthread_exit here
 }
@@ -161,15 +159,19 @@ void *storage_manager(void *arg) {
     while (1) {
         if(exit_storage_and_data_manager == 1)
         {
+            //pthread_mutex_unlock(&shared_buffer->mutex);
             break;
         }
         if(buffer_node == NULL)
         {
-            //if the buffer node is null->wait
-            printf("ERROR");
-            pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
-            buffer_node = shared_buffer->head;
+            while(buffer_node == NULL){
+                while(buffer_node == NULL) {
+                    printf("data manager waiting for data\n");
+                    pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
+                }
+            }
         }
+        buffer_node = shared_buffer->head;
         while(buffer_node->next != NULL){
             pthread_mutex_lock(&shared_buffer->mutex);
             int actions_performed = 0;
@@ -177,6 +179,7 @@ void *storage_manager(void *arg) {
             next_node = buffer_node->next;
             if(exit_storage_and_data_manager == 1)
             {
+                pthread_mutex_unlock(&shared_buffer->mutex);
                 break;
             }
             if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
@@ -199,20 +202,19 @@ void *storage_manager(void *arg) {
 
             }
             if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager != 1){
+                pthread_mutex_unlock(&shared_buffer->mutex);
                 continue;
             }
             pthread_mutex_unlock(&shared_buffer->mutex);
-            usleep(250000);
+
 
         }
-         // Sleep for 25 microseconds
 
 
     }
     printf("storage manager shutting down\n");
+    fclose(csv);
     sbuffer_free(&shared_buffer);
-    fclose(csv);  // Close CSV file
-    pthread_exit(NULL);
     return NULL;
 }
 

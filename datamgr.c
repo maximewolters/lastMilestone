@@ -167,14 +167,13 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
         }
         while(buffer_node->next != NULL)
         {
-            int actions_performed = 0;
-            next_node = buffer_node->next;
-            pthread_mutex_lock(&mutex_buffer);
-
             if(exit_data_manager == 1)
             {
                 break;
             }
+            int actions_performed = 0;
+            next_node = buffer_node->next;
+            pthread_mutex_lock(&mutex_buffer);
             SensorNode *sensor_node = sensorList->head;
 
             while (sensor_node->roomID != buffer_node->data->id) {
@@ -235,11 +234,11 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, double minTemperature, do
                 }
                 */
             }
-            if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager != 1){
+            if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager != 1 && actions_performed != 1){
+                pthread_mutex_unlock(&mutex_buffer);
                 continue;
             }
             pthread_mutex_unlock(&mutex_buffer);
-            usleep(250000);
 
         }
 
