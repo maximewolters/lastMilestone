@@ -48,7 +48,6 @@ int sequence_number;
 
 
 int main(int argc, char* argv[]) {
-    printf("MAX_TEMP = %f, MIN_TEMP = %f\n", MAX_TEMP, MIN_TEMP);
     //initialising the port and max_conn that get passed by the arguments
     port = atoi(argv[1]);
     max_conn = atoi(argv[2]);
@@ -77,9 +76,6 @@ int main(int argc, char* argv[]) {
         printf("error creating pipe\n");
         return -1;
     }
-    else{
-        printf("pipe creation succesful!");
-    }
 
     //fork
     int pid = fork();
@@ -89,14 +85,10 @@ int main(int argc, char* argv[]) {
         printf("error creating child process\n");
         return -1;
     }
-    else{
-        printf("pipe creation succesful!");
-    }
 
     //child process -> pid == 0
     if(pid == 0)
     {
-        printf("child process running\n");
         start_log_process(NULL);
         exit(0);
     }
@@ -122,20 +114,11 @@ int main(int argc, char* argv[]) {
 
         pthread_join(data_manager, NULL);
         pthread_join(storage_manager, NULL);
-
-        //check if the storage manager freed the shared buffer
-        if(sbuffer_size(shared_buffer) > 0)
-        {
-            printf("buffer not empty\n");
-        }
-
-        //pthread_mutex_destroy(&shared_buffer->mutex);
-        //pthread_cond_destroy(&condition_buffer);
+        pthread_mutex_destroy(&shared_buffer->mutex);
+        pthread_cond_destroy(&condition_buffer);
         sbuffer_free(&shared_buffer);
         return 0;
     }
-    return 0;
-
 }
 
 void write_to_pipe(char *log_event)
@@ -238,7 +221,6 @@ void *start_storage_manager(void *arg) {
                 pthread_mutex_unlock(&shared_buffer->mutex);
                 break;
             }
-            //buffer_node = shared_buffer->head;
             if(buffer_node->next != NULL)
             {
                 if (buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1) {
@@ -260,7 +242,6 @@ void *start_storage_manager(void *arg) {
 
     printf("storage manager shutting down\n");
     close_db(csv);
-    sbuffer_free(&shared_buffer);
     return NULL;
 }
 

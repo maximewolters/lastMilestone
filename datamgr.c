@@ -155,10 +155,7 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, p
     sbuffer_node_t *next_node;
     while (1)
     {
-        if(exit_data_manager == 1)
-        {
-            break;
-        }
+        if(exit_data_manager == 1){break;}
         pthread_mutex_lock(&shared_buffer->mutex);
         while (shared_buffer->head == NULL) {
             printf("storage manager waiting for data\n");
@@ -170,18 +167,16 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, p
         pthread_mutex_unlock(&shared_buffer->mutex);
         while(!check_if_buffer_node_NULL(buffer_node))
         {
-            pthread_mutex_lock(&mutex_buffer);
-            if(exit_data_manager == 1)
-            {
-                break;
-            }
+            if(exit_data_manager == 1){ pthread_mutex_unlock(&shared_buffer->mutex);break;}
+            if(exit_data_manager == 1){break;}
             int actions_performed = 0;
             buffer_node = buffer->head;
             if(buffer_node->next != NULL)
             {
+                if(exit_data_manager == 1){ pthread_mutex_unlock(&shared_buffer->mutex);break;}
                 next_node = buffer_node->next;
                 SensorNode *sensor_node = sensorList->head;
-                while (sensor_node->sensorID != buffer_node->data->id) {
+                while (sensor_node != NULL && sensor_node->sensorID != buffer_node->data->id) {
                     sensor_node = sensor_node->next;
                 }
                 if(sensor_node == NULL)

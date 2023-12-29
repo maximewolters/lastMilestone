@@ -1,0 +1,55 @@
+0 Fri Dec 29 21:41:54 2023 A new data.csv file has been created
+1 Fri Dec 29 21:42:02 2023 Sensor node 15 has opened a new connection
+2 Fri Dec 29 21:42:03 2023 Sensor node 21 has opened a new connection
+3 Fri Dec 29 21:42:03 2023 Data insertion from sensor 21 succeeded.
+4 Fri Dec 29 21:42:03 2023 n
+5 Fri Dec 29 21:42:03 2023 Sensor node 21 reports it’s too hot (avg temp = 20.197088)
+6 Fri Dec 29 21:42:03 2023 Data insertion from sensor 15 succeeded.
+7 Fri Dec 29 21:42:03 2023 g temp = 20.197088)
+8 Fri Dec 29 21:42:04 2023 Sensor node 37 has opened a new connection
+9 Fri Dec 29 21:42:04 2023 temp = 20.197088)
+10 Fri Dec 29 21:42:04 2023 Sensor node 37 reports it’s too hot (avg temp = 20.132489)
+11 Fri Dec 29 21:42:04 2023 Data insertion from sensor 37 succeeded.
+12 Fri Dec 29 21:42:04 2023 g temp = 20.132489)
+13 Fri Dec 29 21:42:04 2023 Data insertion from sensor 15 succeeded.
+14 Fri Dec 29 21:42:04 2023 g temp = 20.132489)
+15 Fri Dec 29 21:42:05 2023 Data insertion from sensor 15 succeeded.
+16 Fri Dec 29 21:42:05 2023 g temp = 20.132489)
+17 Fri Dec 29 21:42:05 2023 Sensor node 15 reports it’s too hot (avg temp = 20.075581)
+18 Fri Dec 29 21:42:06 2023 Sensor node 21 reports it’s too hot (avg temp = 20.233873)
+19 Fri Dec 29 21:42:06 2023 Data insertion from sensor 21 succeeded.
+20 Fri Dec 29 21:42:06 2023 g temp = 20.233873)
+21 Fri Dec 29 21:42:06 2023 Sensor node 37 reports it’s too hot (avg temp = 20.095422)
+22 Fri Dec 29 21:42:06 2023 Data insertion from sensor 37 succeeded.
+23 Fri Dec 29 21:42:06 2023 Data insertion from sensor 15 succeeded.
+24 Fri Dec 29 21:42:06 2023 g temp = 20.095422)
+25 Fri Dec 29 21:42:06 2023 Sensor node 15 reports it’s too hot (avg temp = 20.123131)
+26 Fri Dec 29 21:42:06 2023 Data insertion from sensor 37 succeeded.
+27 Fri Dec 29 21:42:07 2023 Data insertion from sensor 15 succeeded.
+28 Fri Dec 29 21:42:07 2023 g temp = 20.123131)
+29 Fri Dec 29 21:42:07 2023 Sensor node 15 reports it’s too hot (avg temp = 20.200713)
+30 Fri Dec 29 21:42:07 2023 Data insertion from sensor 37 succeeded.
+31 Fri Dec 29 21:42:08 2023 Sensor node 37 reports it’s too hot (avg temp = 20.006287)
+32 Fri Dec 29 21:42:08 2023 Data insertion from sensor 37 succeeded.
+33 Fri Dec 29 21:42:08 2023 Data insertion from sensor 37 succeeded.
+34 Fri Dec 29 21:42:08 2023 g temp = 20.006287)
+35 Fri Dec 29 21:42:08 2023 Data insertion from sensor 15 succeeded.
+36 Fri Dec 29 21:42:08 2023 g temp = 20.006287)
+37 Fri Dec 29 21:42:08 2023 Sensor node 15 reports it’s too hot (avg temp = 20.267337)
+38 Fri Dec 29 21:42:08 2023 Data insertion from sensor 37 succeeded.
+39 Fri Dec 29 21:42:09 2023 Sensor node 15 has closed connection
+40 Fri Dec 29 21:42:09 2023  (avg temp = 20.267337)
+41 Fri Dec 29 21:42:09 2023 Sensor node 21 reports it’s too hot (avg temp = 20.212949)
+42 Fri Dec 29 21:42:09 2023 Data insertion from sensor 37 succeeded.
+43 Fri Dec 29 21:42:09 2023 Data insertion from sensor 21 succeeded.
+44 Fri Dec 29 21:42:09 2023 g temp = 20.212949)
+45 Fri Dec 29 21:42:09 2023 Sensor node 21 has closed connection
+46 Fri Dec 29 21:42:09 2023 ed.
+47 Fri Dec 29 21:42:10 2023 Data insertion from sensor 37 succeeded.
+48 Fri Dec 29 21:42:10 2023 g temp = 20.212949)
+49 Fri Dec 29 21:42:10 2023 Sensor node 37 reports it’s too hot (avg temp = 20.006956)
+50 Fri Dec 29 21:42:10 2023 Data insertion from sensor 37 succeeded.
+51 Fri Dec 29 21:42:10 2023 Sensor node 37 has closed connection
+52 Fri Dec 29 21:42:10 2023  (avg temp = 20.006956)
+53 Fri Dec 29 21:42:10 2023 The data.csv file has been closed.
+54 Fri Dec 29 21:42:10 2023 n
