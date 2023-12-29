@@ -140,13 +140,13 @@ int main(int argc, char* argv[]) {
 
 void write_to_pipe(char *log_event)
 {
-    write(fd[0], log_event, strlen(log_event));
+    write(fd[1], log_event, strlen(log_event));
 }
 
 
 void *start_log_process(void *arg) {
     // Create log file
-    FILE *gateway_log = fopen("gateway_log", "w");
+    FILE *gateway_log = fopen("gateway.log", "w");
     if (gateway_log == NULL) {
         perror("Error opening log file");
         exit(EXIT_FAILURE);

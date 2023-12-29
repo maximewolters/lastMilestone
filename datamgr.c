@@ -240,12 +240,12 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, p
 
                     if(sensor_node->average > MAX_TEMP)
                     {
-                        sprintf(log_event, "Sensor node %d reports it’s too hot (avg temp = %f)", sensor_node->sensorID, sensor_node->average);
+                        sprintf(log_event, "Sensor node %d reports it’s too hot (avg temp = %f)\n", sensor_node->sensorID, sensor_node->average);
                         write_to_pipe(log_event);
                     }
                     if(sensor_node->average < MIN_TEMP)
                     {
-                        sprintf(log_event, "Sensor node %d reports it’s too cold (avg temp = %f)", sensor_node->sensorID, sensor_node->average);
+                        sprintf(log_event, "Sensor node %d reports it’s too cold (avg temp = %f)\n", sensor_node->sensorID, sensor_node->average);
                         write_to_pipe(log_event);
                     }
                     buffer_node = next_node;
@@ -254,7 +254,7 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, p
 
             pthread_mutex_unlock(&mutex_buffer);
         }
-        ;
+
     }
 
     printf("data manager shutting down\n");
