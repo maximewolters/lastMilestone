@@ -64,13 +64,20 @@ run: sensor_gateway
 	./sensor_gateway 5678 3
 
 runclient1: sensor_node
-	./sensor_node 15 2 127.0.0.1 5678
+	./sensor_node 15 1 127.0.0.1 5678
 
 runclient2: sensor_node
-	./sensor_node 21 2 127.0.0.1 5678
+	./sensor_node 21 3 127.0.0.1 5678
 
 runclient3: sensor_node
 	./sensor_node 37 2 127.0.0.1 5678
+
+runclient4: sensor_node
+	./sensor_node 49 1 127.0.0.1 5678
+
+runclient5: sensor_node
+	./sensor_node 112 1 127.0.0.1 5678
+
 
 zip:
 	zip lab_final.zip main.c connmgr.c connmgr.h datamgr.c datamgr.h sbuffer.c sbuffer.h sensor_db.c sensor_db.h config.h lib/dplist.c lib/dplist.h lib/tcpsock.c lib/tcpsock.h

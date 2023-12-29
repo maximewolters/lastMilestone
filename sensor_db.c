@@ -10,7 +10,7 @@ FILE *open_db(const char *filename, bool append) {
         perror("Error opening file");
         return NULL;
     }
-    sprintf(logev, "A new data.csv file has been created");
+    sprintf(logev, "A new data.csv file has been created\n");
     write_to_pipe(logev);
     return file;
 }
@@ -24,7 +24,7 @@ int insert_sensor(FILE *file, sensor_id_t id, sensor_value_t value, sensor_ts_t 
         perror("Error writing to file");
         return -1;
     }
-    sprintf(logev, "Data insertion from sensor %d succeeded.", id);
+    sprintf(logev, "Data insertion from sensor %d succeeded.\n", id);
     write_to_pipe(logev);
     return 0;
 }
@@ -38,7 +38,7 @@ int close_db(FILE *file) {
         perror("Error closing file");
         return -1;
     }
-    sprintf(logev, "The data.csv file has been closed.");
+    sprintf(logev, "The data.csv file has been closed.\n");
     write_to_pipe(logev);
     return 0;
 }

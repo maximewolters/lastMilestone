@@ -16,6 +16,7 @@
 
 int exit_data_manager = 0;
 char log_event[10000];
+int check_if_buffer_node_NULL(sbuffer_node_t *buffer_node);
 
 SensorList *SensorList_create() {
     SensorList *list;
@@ -150,26 +151,24 @@ SensorNode* SensorList_get_reference_at_index(SensorList* list, int index) {
 
 // Function to read sensor data from shared buffer and update the corresponding node
 void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, pthread_mutex_t mutex_buffer) {
-    pthread_mutex_lock(&mutex_buffer);
-    while(sbuffer_size(buffer) == 0) {
-        printf("data manager waiting for data\n");
-        pthread_cond_wait(&condition_buffer, &mutex_buffer);
-    }
-    printf("data manager ready to process data\n");
-    pthread_mutex_unlock(&mutex_buffer);
-    //pthread_cond_signal(&condition_buffer);
     sbuffer_node_t *buffer_node;
     sbuffer_node_t *next_node;
     while (1)
     {
-
-        //printf("entering dataloop\n");
         if(exit_data_manager == 1)
         {
             break;
         }
-        buffer_node = buffer->head;
-        while(buffer_node != NULL)
+        pthread_mutex_lock(&shared_buffer->mutex);
+        while (shared_buffer->head == NULL) {
+            printf("storage manager waiting for data\n");
+            pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
+        }
+        pthread_mutex_unlock(&shared_buffer->mutex);
+        pthread_mutex_lock(&shared_buffer->mutex);
+        buffer_node = shared_buffer->head;
+        pthread_mutex_unlock(&shared_buffer->mutex);
+        while(!check_if_buffer_node_NULL(buffer_node))
         {
             pthread_mutex_lock(&mutex_buffer);
             if(exit_data_manager == 1)
@@ -184,26 +183,19 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, p
                 SensorNode *sensor_node = sensorList->head;
                 while (sensor_node->sensorID != buffer_node->data->id) {
                     sensor_node = sensor_node->next;
-                    if(sensor_node == NULL)
-                    {
-                        sprintf(log_event, "Received sensor data with invalid sensor node ID %d.\n", buffer_node->data->id);
-                        write_to_pipe(log_event);
-                        exit(-1);
-                    }
+                }
+                if(sensor_node == NULL)
+                {
+                    sprintf(log_event, "Received sensor data with invalid sensor node ID %d.\n", buffer_node->data->id);
+                    write_to_pipe(log_event);
 
                 }
                 //delete if read by both storage and data manager
-                if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1){
+                if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1 && sensor_node != NULL){
                     if (sbuffer_size(shared_buffer) > 2) {
                         sbuffer_remove(shared_buffer, buffer_node->data);
                         printf("data removed by datamanager\n");
-                        /*
-                        sprintf(log_event, "removed sensor data with sensor node ID %d.\n", buffer_node->data->id);
-                        printf("checker\n");
-                        write_to_pipe(log_event);
-                        */
                         actions_performed++;
-
                     }
                 }
                 if(sbuffer_size(shared_buffer) > 0 && buffer_node->read_by_data_manager == 0 && actions_performed != 1 && sensor_node != NULL){
@@ -282,7 +274,6 @@ void fill_list_from_file(const char *filename, SensorList *list) {
     while (fscanf(file, "%hu %hu\n", &roomID, &sensorID) == 2) {
         // Insert the new node into the list with initial values
         list = insert_sensor_data(list, roomID, sensorID, 0.0, time(NULL));
-        printf("RID: %d, SID: %d\n", list->head->roomID, list->head->sensorID);
     }
     fclose(file);
 }
@@ -291,7 +282,6 @@ void update_exit()
 {
     exit_data_manager = 1;
 }
-
 
 
 

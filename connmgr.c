@@ -24,7 +24,6 @@ void *handleConnection(void *arg) {
     short sensor_insert = 1;
     tcpsock_t *client = *((tcpsock_t **)arg);
     do {
-        //pthread_mutex_lock(&shared_buffer->mutex);
         // read sensor ID
         bytes = sizeof(data.id);
         result = tcp_receive(client, (void *)&data.id, &bytes);
@@ -37,8 +36,8 @@ void *handleConnection(void *arg) {
         if(sensor_insert)
         {
             sensor_insert = 0;
-            //sprintf(message, "Sensor node %d has opened a new connection", data.id);
-            //write_to_pipe(message);
+            sprintf(message, "Sensor node %d has opened a new connection\n", data.id);
+            write_to_pipe(message);
         }
         if ((result == TCP_NO_ERROR) && bytes) {
             printf("sensor id = %" PRIu16 " - temperature = %g - timestamp = %ld\n", data.id, data.value,
@@ -57,8 +56,8 @@ void *handleConnection(void *arg) {
         pthread_mutex_unlock(&connection_mutex);}
     else
         printf("Error occurred on connection to peer\n");
-    //sprintf(message, "Sensor node %d has closed connection", data.id);
-    //write_to_pipe(message);
+    sprintf(message, "Sensor node %d has closed connection\n", data.id);
+    write_to_pipe(message);
     tcp_close(&client);
     pthread_exit(NULL);
 }
@@ -82,7 +81,9 @@ int connmgrMain(int port, int max_conn, sbuffer_t *sbuffer) {
         // Allocate memory for the client socket pointer
         tcpsock_t **client_ptr = malloc(sizeof(tcpsock_t *));
         *client_ptr = client;
+        pthread_mutex_lock(&connection_mutex);
         conn_counter++;
+        pthread_mutex_unlock(&connection_mutex);
         result = pthread_create(&thread_ids[conn_counter - 1], NULL, handleConnection, client_ptr);
         if (result != 0) {
             fprintf(stderr, "Error while making stream!");

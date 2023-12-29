@@ -201,19 +201,8 @@ void *start_data_manager(void *arg) {
     FILE *map = fopen("room_sensor.map", "r");
     // Fill the linked list with nodes from room_sensor.map
     fill_list_from_file("room_sensor.map", sensorList);
-    printf("sensor list is filled with initial values\n");
     // Update nodes with sensor data from the shared buffer data
     update_sensor_data_from_buffer(shared_buffer, sensorList, shared_buffer->mutex);
-
-    // Print the contents of the linked list to test if main func works, preprocessor directives are not yet used
-    SensorNode *current = sensorList->head;
-    while (current != NULL) {
-        printf("Room ID: %u, Sensor ID: %u, Average Temperature: %f, Last Modified: %ld\n",
-               current->roomID, current->sensorID, current->average,
-               current->lastModified);
-        current = current->next;
-    }
-
     SensorList_free(sensorList);
     fclose(map);
 
@@ -225,19 +214,9 @@ void *start_storage_manager(void *arg) {
     printf("storage manager startup\n");
     // Open CSV file to write
     FILE *csv = open_db("sensor_data_out.csv", false);
-    pthread_mutex_lock(&shared_buffer->mutex);
-    while(sbuffer_size(shared_buffer) == 0)
-    {
-        printf("storage manager waiting for data\n");
-        pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
-    }
-    pthread_mutex_unlock(&shared_buffer->mutex);
-
     sbuffer_node_t *buffer_node;
     while (1) {
-        //printf("storage manager mutex locked\n");
         if (exit_storage_and_data_manager == 1) {
-            //pthread_mutex_unlock(&shared_buffer->mutex);
             break;
         }
         pthread_mutex_lock(&shared_buffer->mutex);
@@ -245,11 +224,13 @@ void *start_storage_manager(void *arg) {
             printf("storage manager waiting for data\n");
             pthread_cond_wait(&condition_buffer, &shared_buffer->mutex);
         }
-        //printf("storage manager ready to process data\n");
         pthread_mutex_unlock(&shared_buffer->mutex);
 
+
+        pthread_mutex_lock(&shared_buffer->mutex);
         buffer_node = shared_buffer->head;
-        while (buffer_node != NULL) {
+        pthread_mutex_unlock(&shared_buffer->mutex);
+        while (!check_if_buffer_node_NULL(buffer_node)) {
             pthread_mutex_lock(&shared_buffer->mutex);
             int actions_performed = 0;
             sensor_data_t data = *buffer_node->data;
@@ -267,12 +248,11 @@ void *start_storage_manager(void *arg) {
                 }
 
                 if (buffer_node->read_by_storage_manager == 0 && actions_performed != 1) {
-                    actions_performed++;
                     insert_sensor(csv, data.id, data.value, data.ts);
                     buffer_node->read_by_storage_manager = 1;
                     printf("storageloop\n");
-                    buffer_node = buffer_node->next;
                 }
+                buffer_node = buffer_node->next;
             }
             pthread_mutex_unlock(&shared_buffer->mutex);
         }
@@ -284,7 +264,12 @@ void *start_storage_manager(void *arg) {
     return NULL;
 }
 
-
+int check_if_buffer_node_NULL(sbuffer_node_t *buffer_node) {
+    pthread_mutex_lock(&shared_buffer->mutex);
+    int is_null = (buffer_node == NULL);
+    pthread_mutex_unlock(&shared_buffer->mutex);
+    return is_null;
+}
 
 
 
