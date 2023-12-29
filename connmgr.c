@@ -24,7 +24,7 @@ void *handleConnection(void *arg) {
     short sensor_insert = 1;
     tcpsock_t *client = *((tcpsock_t **)arg);
     do {
-        pthread_mutex_lock(&connection_mutex);
+        //pthread_mutex_lock(&shared_buffer->mutex);
         // read sensor ID
         bytes = sizeof(data.id);
         result = tcp_receive(client, (void *)&data.id, &bytes);
@@ -44,11 +44,11 @@ void *handleConnection(void *arg) {
             printf("sensor id = %" PRIu16 " - temperature = %g - timestamp = %ld\n", data.id, data.value,
                    (long int)data.ts);
             sbuffer_insert(shared_buffer, &data);
-            pthread_cond_signal(&condition_buffer);
+            pthread_cond_broadcast(&condition_buffer);
 
         }
 
-        pthread_mutex_unlock(&connection_mutex);
+        //pthread_mutex_unlock(&shared_buffer->mutex);
         //usleep(10000); make file doesn't allow me to use this even when #include <unistd.h> is included
     } while (result == TCP_NO_ERROR);
     if (result == TCP_CONNECTION_CLOSED){
