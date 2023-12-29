@@ -62,14 +62,11 @@ SensorList* insert_sensor_data(SensorList* list, uint16_t roomID, uint16_t senso
     // Create a new SensorNode with the provided data
     SensorNode* new_sensor_data = create_sensor_node(roomID, sensorID, temperature, timestamp);
 
-    // Insert the new SensorNode into the SensorList
     if (list == NULL) {
-        // Handle the case where the list is NULL
-        free(new_sensor_data); // Clean up allocated memory
+        free(new_sensor_data);
         return NULL;
     }
 
-    //insert at the beginning of the list
     new_sensor_data->next = list->head;
     if (list->head != NULL) {
         list->head->prev = new_sensor_data;
@@ -189,7 +186,6 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, p
                 if(buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1 && sensor_node != NULL){
                     if (sbuffer_size(shared_buffer) > 2) {
                         sbuffer_remove(shared_buffer, buffer_node->data);
-                        printf("data removed by datamanager\n");
                         actions_performed++;
                     }
                 }
@@ -222,7 +218,6 @@ void update_sensor_data_from_buffer(sbuffer_t *buffer, SensorList *sensorList, p
                     sensor_node->average = (sum_of_temperatures/count_temp_not_zero);
                     //set read_by_data_manager flag to one
                     buffer_node->read_by_data_manager = 1;
-                    printf("dataloop\n");
 
 
                     if(sensor_node->average > MAX_TEMP)

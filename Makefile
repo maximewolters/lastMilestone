@@ -61,7 +61,7 @@ clean-all: clean
 	rm -rf lib/*.so
 
 run: sensor_gateway
-	./sensor_gateway 5678 3
+	./sensor_gateway 5678 5
 
 runclient1: sensor_node
 	./sensor_node 15 1 127.0.0.1 5678

@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     if(pid == 0)
     {
         start_log_process(NULL);
-        exit(0);
+        return 0;
     }
     //parent process -> pid != 0
     else
@@ -196,7 +196,7 @@ void *start_data_manager(void *arg) {
 void *start_storage_manager(void *arg) {
     printf("storage manager startup\n");
     // Open CSV file to write
-    FILE *csv = open_db("sensor_data_out.csv", false);
+    FILE *csv = open_db("data.csv", false);
     sbuffer_node_t *buffer_node;
     while (1) {
         if (exit_storage_and_data_manager == 1) {
@@ -225,14 +225,12 @@ void *start_storage_manager(void *arg) {
             {
                 if (buffer_node->read_by_storage_manager == 1 && buffer_node->read_by_data_manager == 1) {
                     sbuffer_remove(shared_buffer, buffer_node->data);
-                    printf("data removed by storage manager\n");
                     actions_performed++;
                 }
 
                 if (buffer_node->read_by_storage_manager == 0 && actions_performed != 1) {
                     insert_sensor(csv, data.id, data.value, data.ts);
                     buffer_node->read_by_storage_manager = 1;
-                    printf("storageloop\n");
                 }
                 buffer_node = buffer_node->next;
             }

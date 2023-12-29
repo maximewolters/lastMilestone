@@ -34,14 +34,11 @@ int sbuffer_free(sbuffer_t **buffer) { //free allocated mem, but witj mutually e
     return SBUFFER_SUCCESS;
 }
 int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, again with mutex flags
-    //pthread_mutex_lock(&(buffer->mutex));
     sbuffer_node_t *newNode;
     if (buffer == NULL) {
-        //pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_FAILURE;
     }
     if (buffer->head == NULL) {
-        //pthread_mutex_unlock(&(buffer->mutex));
         return SBUFFER_NO_DATA;
     }
     buffer->count--;
@@ -53,7 +50,6 @@ int sbuffer_remove(sbuffer_t *buffer, sensor_data_t *data) {//safe removal, agai
         buffer->head = buffer->head->next;
     }
     free(newNode);
-    //pthread_mutex_unlock(&(buffer->mutex));
     return SBUFFER_SUCCESS;
 }
 int sbuffer_insert(sbuffer_t *buffer, sensor_data_t *data) {//safe insert
